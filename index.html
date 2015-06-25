@@ -7,8 +7,7 @@
 <body>
 Testing WebRTC connection.
 
-<button id=msg1 type=button>PC1 -> PC2</button>
-<br>
+<input type="button" onClick="sendPing()" value="send ping" /><br>
 <input type="button" onClick="makeOffer()" value="(1) make offer" />
 <input type="button" onClick="acceptOffer()" value="(2) accept offer" />
 <input type="button" onClick="acceptAnswer()" value="(3) accept answer" /><br>
@@ -16,26 +15,14 @@ Testing WebRTC connection.
 <br>
 
 <script>
-/* See also:
-    http://www.html5rocks.com/en/tutorials/webrtc/basics/
-    https://code.google.com/p/webrtc-samples/source/browse/trunk/apprtc/index.html
-    
-    https://webrtc-demos.appspot.com/html/pc1.html
-*/
+// clean out textarea
+document.getElementById("offer").value = ""
 
 var offer = {}
 
-document.getElementById("offer").value = ""
+var con = { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true }] };
 
-var cfg = {"iceServers":[{"url":"stun:23.21.150.121"}]},
-    con = { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true }] };
-
-// createDataChannel needs `open /Applications/Google\ Chrome\ Canary.app --args --enable-data-channels` :-(
-
-
-/* THIS IS ALICE, THE CALLER/SENDER */
-
-var pc1 = new mozRTCPeerConnection(cfg, con),
+var pc1 = new mozRTCPeerConnection(null, con),
     dc1 = null;
 
 function setupDC1() {
@@ -57,20 +44,14 @@ function setupDC1() {
 		}
     } catch (e) { console.warn("No data channel (pc1)", e); }
 }
-// Chrome needs us to do set up the data channel right away, for Firefox see below
-//  see https://webrtc-demos.appspot.com/html/dc1.html
 if (!pc1.connectDataConnection) setupDC1();
 
-pc1.onsignalingstatechange = function(state){
-	console.log("State is now", state)
-};
-
 pc1.onicecandidate = function (e) {
-    console.log("ICE candidate (pc1)", e.candidate);
     if (e.candidate) {
+		console.log("ICE candidate (pc1)", e.candidate);
 		offer.candidates.push(e.candidate)
+		updateOffer()
 	}
-	updateOffer()
 };
 
 function makeOffer(){
@@ -109,29 +90,17 @@ function acceptOffer(){
     }, function () { console.warn("No create answer"); });
 }
 
-/*
-pc1.onicecandidate = function (e) {
-    console.log("ICE candidate (pc1)", e);
-    if (e.candidate) handleCandidateFromPC1(e.candidate)
-};
-*/
-
-/*
-function handleCandidateFromPC2(iceCandidate) {
-    pc1.addIceCandidate(iceCandidate);
-}
-*/
-
+// this is called from a button
 function updateOffer() {
 	document.getElementById("offer").value = JSON.stringify(offer)
 }
 
-document.getElementById('msg1').addEventListener('click', function () {
-	console.log("dc1", dc1)
+// this is called from a button
+function sendPing() {
     if (dc1) dc1.send("ping");
-}, false);
+};
 
-
+// This is called from a button
 function acceptAnswer() {
 	offer = JSON.parse(document.getElementById("offer").value)
 	var answer = new mozRTCSessionDescription()
@@ -148,6 +117,7 @@ function acceptAnswer() {
 	}
 }
 
+// This is called on the receiver
 pc1.ondatachannel = function (e) {
     var datachannel = e.channel || e;       // Chrome sends event, FF sends raw channel
     console.log("Received datachannel (pc1)", arguments);
