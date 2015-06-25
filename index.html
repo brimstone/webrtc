@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebRTC p2p data</title>
+</head>
+<body>
+Testing WebRTC connection.
+
+<button id=msg1 type=button>PC1 -> PC2</button>
+<br>
+<input type="button" onClick="makeOffer()" value="(1) make offer" />
+<input type="button" onClick="acceptOffer()" value="(2) accept offer" />
+<input type="button" onClick="acceptAnswer()" value="(3) accept answer" /><br>
+<textarea id="offer" style="width: 100%" rows="15"></textarea>
+<br>
+
+<script>
+/* See also:
+    http://www.html5rocks.com/en/tutorials/webrtc/basics/
+    https://code.google.com/p/webrtc-samples/source/browse/trunk/apprtc/index.html
+    
+    https://webrtc-demos.appspot.com/html/pc1.html
+*/
+
+var offer = {}
+
+document.getElementById("offer").value = ""
+
+var cfg = {"iceServers":[{"url":"stun:23.21.150.121"}]},
+    con = { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true }] };
+
+// createDataChannel needs `open /Applications/Google\ Chrome\ Canary.app --args --enable-data-channels` :-(
+
+
+/* THIS IS ALICE, THE CALLER/SENDER */
+
+var pc1 = new mozRTCPeerConnection(cfg, con),
+    dc1 = null;
+
+function setupDC1() {
+    try {
+        dc1 = pc1.createDataChannel('test', {reliable:false});
+        console.log("Created datachannel (pc1)");
+        dc1.onmessage = function (e) {
+            console.log("Got message (pc1)", e.data);
+        }        
+		dc1.onopen = function(e) {
+			console.log("dc1 opened", e)
+			dc1.send("holy sheet")
+		}
+		dc1.onerror = function(e) {
+			console.log("dc1 errored", e)
+		}
+		dc1.onclose = function(e) {
+			console.log("dc1 closed", e)
+		}
+    } catch (e) { console.warn("No data channel (pc1)", e); }
+}
+// Chrome needs us to do set up the data channel right away, for Firefox see below
+//  see https://webrtc-demos.appspot.com/html/dc1.html
+if (!pc1.connectDataConnection) setupDC1();
+
+pc1.onsignalingstatechange = function(state){
+	console.log("State is now", state)
+};
+
+pc1.onicecandidate = function (e) {
+    console.log("ICE candidate (pc1)", e.candidate);
+    if (e.candidate) {
+		offer.candidates.push(e.candidate)
+	}
+	updateOffer()
+};
+
+function makeOffer(){
+	navigator.mozGetUserMedia({audio:true, fake:true}, function (stream) {
+	    console.log("Got local audio", stream);
+	    pc1.addStream(stream);
+	    pc1.createOffer(function (offerDesc) {
+	        console.log("Made offer", offerDesc);
+	        pc1.setLocalDescription(offerDesc);
+			offer.sdp = offerDesc.sdp;
+			offer.candidates = []
+	    }, function () { console.warn("No create offer"); });
+	    
+	}, function () { console.warn("No audio"); });
+}
+
+function acceptOffer(){
+	offer = JSON.parse(document.getElementById("offer").value)
+	var offerDesc = new mozRTCSessionDescription()
+	offerDesc.type = "offer"
+	offerDesc.sdp = offer.sdp
+	console.log("Accepted offer", offerDesc);
+    pc1.setRemoteDescription(offerDesc);
+	for (var i = 0; i < offer.candidates.length; i++){
+		candidate = new mozRTCIceCandidate()
+		candidate.candidate = offer.candidates[i].candidate
+		candidate.sdpMLineIndex = offer.candidates[i].sdpMLineInterface
+		console.log("Adding candidate", candidate)
+		pc1.addIceCandidate(candidate)
+	}
+    pc1.createAnswer(function (answer) {
+        console.log("Made answer", answer);
+        pc1.setLocalDescription(answer);
+		offer.sdp  = answer.sdp;
+		offer.candidates = []
+    }, function () { console.warn("No create answer"); });
+}
+
+/*
+pc1.onicecandidate = function (e) {
+    console.log("ICE candidate (pc1)", e);
+    if (e.candidate) handleCandidateFromPC1(e.candidate)
+};
+*/
+
+/*
+function handleCandidateFromPC2(iceCandidate) {
+    pc1.addIceCandidate(iceCandidate);
+}
+*/
+
+function updateOffer() {
+	document.getElementById("offer").value = JSON.stringify(offer)
+}
+
+document.getElementById('msg1').addEventListener('click', function () {
+	console.log("dc1", dc1)
+    if (dc1) dc1.send("ping");
+}, false);
+
+
+function acceptAnswer() {
+	offer = JSON.parse(document.getElementById("offer").value)
+	var answer = new mozRTCSessionDescription()
+	answer.type = "answer"
+	answer.sdp = offer.sdp
+	console.log("Accepted answer", answer);
+    pc1.setRemoteDescription(answer);
+	for (var i = 0; i < offer.candidates.length; i++){
+		candidate = new mozRTCIceCandidate()
+		candidate.candidate = offer.candidates[i].candidate
+		candidate.sdpMLineIndex = offer.candidates[i].sdpMLineInterface
+		console.log("Adding candidate", candidate)
+		pc1.addIceCandidate(candidate)
+	}
+}
+
+pc1.ondatachannel = function (e) {
+    var datachannel = e.channel || e;       // Chrome sends event, FF sends raw channel
+    console.log("Received datachannel (pc1)", arguments);
+    dc1 = datachannel;
+    dc1.onmessage = function (e) {
+        console.log("Got message (pc1)", e.data);
+    }
+}
+
+</script>
+<script src="/livereload.js"></script>
+</body>
+</html>
