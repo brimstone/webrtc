@@ -27,6 +27,31 @@ Testing WebRTC connection.
 // clean out textarea
 document.getElementById("offer").value = ""
 
+webrtc.onMessage = function(msg){
+	console.log("got msg", msg)
+}
+
+function makeOffer(){
+	webrtc.getOffer(function(offer){
+		document.getElementById("offer").value = offer
+	})
+}
+
+function acceptOffer(){
+	webrtc.acceptOffer(document.getElementById("offer").value, function(answer){
+		document.getElementById("offer").value = answer
+	})
+}
+
+function acceptAnswer(){
+	webrtc.acceptAnswer(document.getElementById("offer").value, function(){
+		document.getElementById("offer").value = ""
+	})
+}
+
+function sendPing(){
+	webrtc.send("ping")
+}
 
 
 </script>
