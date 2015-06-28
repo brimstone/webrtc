@@ -1,4 +1,4 @@
-webrtc = function() {
+webrtc = (function() {
   var offer = "";
   var pc1 = new mozRTCPeerConnection(null, con);
   var dc1 = null;
@@ -37,16 +37,18 @@ webrtc = function() {
   }
 
   // this is called when the browser figures out an IP address
-  pc1.onicecandidate = function(e) {
-    if (!e.candidate) {
-      // wait for ice to finish gathering candidates
-      offer = pc1.localDescription.sdp
-      updateOffer()
-    }
-  };
-
   // this is called from a button
-  self.makeOffer = function() {
+  getOffer = function(callback) {
+    if (offer == "") {
+      console.log("have to make an offer first")
+      makeoffer(callback)
+    } else {
+      console.log("already have our offer")
+      callback(offer);
+    }
+  }
+
+  makeoffer = function(callback) {
     navigator.mozGetUserMedia({
       audio: true,
       fake: true
@@ -56,6 +58,16 @@ webrtc = function() {
       pc1.createOffer(function(offerDesc) {
         console.log("Made offer", offerDesc);
         pc1.setLocalDescription(offerDesc);
+        pc1.onicecandidate = function(e) {
+          if (!e.candidate) {
+            // wait for ice to finish gathering candidates
+            offer = pc1.localDescription.sdp
+            if (callback) {
+              callback(offer);
+            }
+          }
+        };
+
       }, function() {
         console.warn("No create offer");
       });
@@ -66,27 +78,9 @@ webrtc = function() {
   }
 
   // this is called from a button
-  self.acceptOffer = function() {
+  acceptOffer = function() {
     offer = document.getElementById("offer").value
-    var offerDesc = new mozRTCSessionDescription()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    var offerDesc = new mozRTCSessionDescription();
     offerDesc.type = "offer"
     offerDesc.sdp = offer
     console.log("Accepted offer", offerDesc);
@@ -110,30 +104,12 @@ webrtc = function() {
       dc1.send("ping");
     }
   }
-  ;
 
+  getAnswer = function() {}
   // This is called from a button
-  self.acceptAnswer = function() {
+  acceptAnswer = function() {
     offer = document.getElementById("offer").value
-    var answer = new mozRTCSessionDescription()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    var answer = new mozRTCSessionDescription();
     answer.type = "answer"
     answer.sdp = offer
     console.log("Accepted answer", answer);
@@ -150,5 +126,9 @@ webrtc = function() {
     }
   }
 
-  return self
-}
+  return {
+    getOffer: getOffer,
+    acceptOffer: acceptOffer,
+    getAnswer: getAnswer,
+  }
+}())
