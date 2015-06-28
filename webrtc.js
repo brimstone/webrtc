@@ -101,11 +101,6 @@ webrtc = (function() {
     });
   };
 
-  // this is called once we have all our candidates
-  function updateOffer() {
-    document.getElementById("offer").value = offer
-  }
-
   // this is called from a button
   var send = function(msg) {
     if (dc1) {
