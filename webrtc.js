@@ -131,14 +131,18 @@ webrtc = (function() {
     console.log("Received datachannel (pc1)", arguments);
     dc1 = datachannel;
     dc1.onmessage = function(e) {
-      console.log("Got message (pc1)", e.data);
+      onMessage(e.data);
+      //console.log("Got message (pc1)", e.data);
     }
   }
+
+  var onMessage = function() {};
 
   return {
     getOffer: getOffer,
     acceptOffer: acceptOffer,
     acceptAnswer: acceptAnswer,
     send: send,
+    onMessage: onMessage,
   }
 }())
