@@ -36,8 +36,7 @@ webrtc = (function() {
     setupDC1();
   }
 
-  // this is called when the browser figures out an IP address
-  // this is called from a button
+  // this is public
   var getOffer = function(callback) {
     if (offer == "") {
       console.log("have to make an offer first")
@@ -48,6 +47,7 @@ webrtc = (function() {
     }
   };
 
+  // this is private, but is called by getOffer
   var makeoffer = function(callback) {
     navigator.mozGetUserMedia({
       audio: true,
@@ -77,7 +77,7 @@ webrtc = (function() {
     });
   };
 
-  // this is called from a button
+  // this is public
   var acceptOffer = function(offer, callback) {
     var offerDesc = new mozRTCSessionDescription();
     offerDesc.type = "offer"
@@ -101,14 +101,14 @@ webrtc = (function() {
     });
   };
 
-  // this is called from a button
+  // this is public
   var send = function(msg) {
     if (dc1) {
       dc1.send(msg);
     }
   };
 
-  // This is called from a button
+  // This is public
   var acceptAnswer = function(answer, callback) {
     var answerDesc = new mozRTCSessionDescription();
     answerDesc.type = "answer"
@@ -120,7 +120,7 @@ webrtc = (function() {
     }
   };
 
-  // This is called on the receiver
+  // this is private, but calls onMessage, which is public when there is data
   pc1.ondatachannel = function(e) {
     var datachannel = e.channel || e; // Chrome sends event, FF sends raw channel
     console.log("Received datachannel (pc1)", arguments);
