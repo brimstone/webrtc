@@ -38,7 +38,7 @@ webrtc = (function() {
 
   // this is called when the browser figures out an IP address
   // this is called from a button
-  getOffer = function(callback) {
+  var getOffer = function(callback) {
     if (offer == "") {
       console.log("have to make an offer first")
       makeoffer(callback)
@@ -46,9 +46,9 @@ webrtc = (function() {
       console.log("already have our offer")
       callback(offer);
     }
-  }
+  };
 
-  makeoffer = function(callback) {
+  var makeoffer = function(callback) {
     navigator.mozGetUserMedia({
       audio: true,
       fake: true
@@ -75,11 +75,10 @@ webrtc = (function() {
     }, function() {
       console.warn("No audio");
     });
-  }
+  };
 
   // this is called from a button
-  acceptOffer = function() {
-    offer = document.getElementById("offer").value
+  var acceptOffer = function(offer, callback) {
     var offerDesc = new mozRTCSessionDescription();
     offerDesc.type = "offer"
     offerDesc.sdp = offer
@@ -88,10 +87,19 @@ webrtc = (function() {
     pc1.createAnswer(function(answer) {
       console.log("Made answer", answer);
       pc1.setLocalDescription(answer);
+      pc1.onicecandidate = function(e) {
+        if (!e.candidate) {
+          // wait for ice to finish gathering candidates
+          answer = pc1.localDescription.sdp
+          if (callback) {
+            callback(answer);
+          }
+        }
+      }
     }, function() {
       console.warn("No create answer");
     });
-  }
+  };
 
   // this is called once we have all our candidates
   function updateOffer() {
@@ -99,22 +107,23 @@ webrtc = (function() {
   }
 
   // this is called from a button
-  function sendPing() {
+  var send = function(msg) {
     if (dc1) {
-      dc1.send("ping");
+      dc1.send(msg);
     }
-  }
+  };
 
-  getAnswer = function() {}
   // This is called from a button
-  acceptAnswer = function() {
-    offer = document.getElementById("offer").value
-    var answer = new mozRTCSessionDescription();
-    answer.type = "answer"
-    answer.sdp = offer
-    console.log("Accepted answer", answer);
-    pc1.setRemoteDescription(answer);
-  }
+  var acceptAnswer = function(answer, callback) {
+    var answerDesc = new mozRTCSessionDescription();
+    answerDesc.type = "answer"
+    answerDesc.sdp = answer
+    console.log("Accepted answer", answerDesc);
+    pc1.setRemoteDescription(answerDesc);
+    if (callback) {
+      callback();
+    }
+  };
 
   // This is called on the receiver
   pc1.ondatachannel = function(e) {
@@ -129,6 +138,7 @@ webrtc = (function() {
   return {
     getOffer: getOffer,
     acceptOffer: acceptOffer,
-    getAnswer: getAnswer,
+    acceptAnswer: acceptAnswer,
+    send: send,
   }
 }())
