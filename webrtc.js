@@ -1,6 +1,6 @@
-webrtc = (function() {
+webrtc = function() {
   var offer = "";
-  var pc1 = new mozRTCPeerConnection(null, con);
+  var peer = new mozRTCPeerConnection(null, con);
   var dc1 = null;
   var con = {
     'optional': [{
@@ -12,11 +12,11 @@ webrtc = (function() {
 
   function setupDC1() {
     try {
-      dc1 = pc1.createDataChannel('test', {
+      dc1 = peer.createDataChannel('test', {
         reliable: false
       });
       dc1.onmessage = function(e) {
-        console.log("Got message (pc1)", e.data);
+        console.log("Got message (peer)", e.data);
       }
       dc1.onopen = function(e) {
         console.log("dc1 opened", e)
@@ -29,10 +29,10 @@ webrtc = (function() {
         console.log("dc1 closed", e)
       }
     } catch ( e ) {
-      console.warn("No data channel (pc1)", e);
+      console.warn("No data channel (peer)", e);
     }
   }
-  if (!pc1.connectDataConnection) {
+  if (!peer.connectDataConnection) {
     setupDC1();
   }
 
@@ -54,14 +54,14 @@ webrtc = (function() {
       fake: true
     }, function(stream) {
       console.log("Got local audio", stream);
-      pc1.addStream(stream);
-      pc1.createOffer(function(offerDesc) {
+      peer.addStream(stream);
+      peer.createOffer(function(offerDesc) {
         console.log("Made offer", offerDesc);
-        pc1.setLocalDescription(offerDesc);
-        pc1.onicecandidate = function(e) {
+        peer.setLocalDescription(offerDesc);
+        peer.onicecandidate = function(e) {
           if (!e.candidate) {
             // wait for ice to finish gathering candidates
-            offer = pc1.localDescription.sdp
+            offer = peer.localDescription.sdp
             if (callback) {
               callback(offer);
             }
@@ -83,14 +83,14 @@ webrtc = (function() {
     offerDesc.type = "offer"
     offerDesc.sdp = offer
     console.log("Accepted offer", offerDesc);
-    pc1.setRemoteDescription(offerDesc);
-    pc1.createAnswer(function(answer) {
+    peer.setRemoteDescription(offerDesc);
+    peer.createAnswer(function(answer) {
       console.log("Made answer", answer);
-      pc1.setLocalDescription(answer);
-      pc1.onicecandidate = function(e) {
+      peer.setLocalDescription(answer);
+      peer.onicecandidate = function(e) {
         if (!e.candidate) {
           // wait for ice to finish gathering candidates
-          answer = pc1.localDescription.sdp
+          answer = peer.localDescription.sdp
           if (callback) {
             callback(answer);
           }
@@ -114,20 +114,20 @@ webrtc = (function() {
     answerDesc.type = "answer"
     answerDesc.sdp = answer
     console.log("Accepted answer", answerDesc);
-    pc1.setRemoteDescription(answerDesc);
+    peer.setRemoteDescription(answerDesc);
     if (callback) {
       callback();
     }
   };
 
   // this is private, but calls onMessage, which is public when there is data
-  pc1.ondatachannel = function(e) {
+  peer.ondatachannel = function(e) {
     var datachannel = e.channel || e; // Chrome sends event, FF sends raw channel
-    console.log("Received datachannel (pc1)", arguments);
+    console.log("Received datachannel (peer)", arguments);
     dc1 = datachannel;
     dc1.onmessage = function(e) {
       onMessage(e.data);
-      //console.log("Got message (pc1)", e.data);
+      //console.log("Got message (peer)", e.data);
     }
   }
 
@@ -139,5 +139,6 @@ webrtc = (function() {
     acceptAnswer: acceptAnswer,
     send: send,
     onMessage: onMessage,
+    RTCPeerConnection: peer,
   }
-}())
+}
