@@ -10,13 +10,28 @@ webrtc = function() {
     }]
   };
 
+  var handlers = {};
+
+  var on = function(eventname, callback){
+    if (!handlers[eventname]) {
+       handlers[eventname] = [];
+    }
+    handlers[eventname].push(callback);
+  };
+
+  var emit = function(eventname, data){
+    for (var i = 0; i < handlers[eventname].length; i++){
+      handlers[eventname][i](data);
+    }
+  };
+
   function setupDC1() {
     try {
       dc1 = peer.createDataChannel('test', {
         reliable: false
       });
       dc1.onmessage = function(e) {
-        console.log("Got message (peer)", e.data);
+		emit('message', e.data);
       }
       dc1.onopen = function(e) {
         console.log("dc1 opened", e)
@@ -103,6 +118,7 @@ webrtc = function() {
 
   // this is public
   var send = function(msg) {
+	console.log("Sending", msg, dc1);
     if (dc1) {
       dc1.send(msg);
     }
@@ -126,19 +142,16 @@ webrtc = function() {
     console.log("Received datachannel (peer)", arguments);
     dc1 = datachannel;
     dc1.onmessage = function(e) {
-      onMessage(e.data);
-      //console.log("Got message (peer)", e.data);
+      emit('message', e.data);
     }
   }
-
-  var onMessage = function() {};
 
   return {
     getOffer: getOffer,
     acceptOffer: acceptOffer,
     acceptAnswer: acceptAnswer,
     send: send,
-    onMessage: onMessage,
+	on: on,
     RTCPeerConnection: peer,
   }
 }

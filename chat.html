@@ -8,33 +8,18 @@
 Testing WebRTC connection.
 
 <input type="button" onClick="sendPing()" value="send ping" /><br>
-<input type="button" onClick="makeOffer()" value="(1) make offer" />
-<input type="button" onClick="acceptOffer()" value="(2) accept offer" />
-<input type="button" onClick="acceptAnswer()" value="(3) accept answer" />
-<input type="button" onClick="loadOfferAnswer()" value="(0) load offer and answer" />
 <br>
 <textarea id="offer" style="width: 100%" rows="15"></textarea>
 <br>
 
-<script>
-	// stolen from https://github.com/toddmotto/atomic
-	!function(a,b){"function"==typeof define&&define.amd?define(b):"object"==typeof exports?module.exports=b:a.atomic=b(a)}(this,function(a){"use strict";var b={},c=function(a){var b;try{b=JSON.parse(a.responseText)}catch(c){b=a.responseText}return[b,a]},d=function(b,d,e){var f={success:function(){},error:function(){}},g=a.XMLHttpRequest||ActiveXObject,h=new g("MSXML2.XMLHTTP.3.0");h.open(b,d,!0),h.setRequestHeader("Content-type","application/json"),h.onreadystatechange=function(){4===h.readyState&&(h.status>=200&&h.status<300?f.success.apply(f,c(h)):f.error.apply(f,c(h)))},h.send(e);var i={success:function(a){return f.success=a,i},error:function(a){return f.error=a,i}};return i};return b.get=function(a){return d("GET",a)},b.put=function(a,b){return d("PUT",a,b)},b.post=function(a,b){return d("POST",a,b)},b["delete"]=function(a){return d("DELETE",a)},b});
-</script>
 
 <script src="webrtc.js"></script>
+<script src="chat.js"></script>
 
 <script>
-// clean out textarea
-document.getElementById("offer").value = ""
-
-webrtc.onMessage = function(msg){
+/*
+peers[0].onMessage = function(msg){
 	console.log("got msg", msg)
-}
-
-function makeOffer(){
-	webrtc.getOffer(function(offer){
-		document.getElementById("offer").value = offer
-	})
 }
 
 function acceptOffer(){
@@ -52,6 +37,9 @@ function acceptAnswer(){
 function sendPing(){
 	webrtc.send("ping")
 }
+*/
+
+var chat = room("chat");
 
 
 </script>

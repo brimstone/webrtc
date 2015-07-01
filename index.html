@@ -24,9 +24,9 @@ document.getElementById("offer").value = ""
 
 peer = webrtc();
 
-peer.onMessage = function(msg){
-	console.log("got msg", msg)
-}
+peer.on('message', function(msg){
+	console.log("Got msg:", msg)
+});
 
 function makeOffer(){
 	peer.getOffer(function(offer){
@@ -49,7 +49,6 @@ function acceptAnswer(){
 function sendPing(){
 	peer.send("ping")
 }
-
 
 </script>
 <script src="/livereload.js"></script>
